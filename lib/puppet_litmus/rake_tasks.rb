@@ -36,6 +36,7 @@ namespace :litmus do
         progress = Thread.new do
           loop do
             printf '.'
+            $stdout.flush
             sleep(10)
           end
         end
