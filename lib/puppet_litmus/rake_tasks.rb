@@ -356,27 +356,33 @@ namespace :litmus do
         if (ENV['CI'] == 'true') || !ENV['DISTELLI_BUILDNUM'].nil?
           # CI systems are strange beasts, we only output a '.' every wee while to keep the terminal alive.
           puts "Running against #{targets.size} targets.\n"
+
+          threads = payloads.map do |title, test, options|
+            Thread.new do
+              puts "Starting #{title}"
+              env = options[:env].nil? ? {} : options[:env]
+              stdout, stderr, status = Open3.capture3(env, test)
+              puts "Finished #{title}"
+              ["\n================\n#{title}\n", stdout, stderr, status]
+            end
+          end
+
           progress = Thread.new do
             loop do
-              printf '.'
+              puts '.'
               sleep(10)
             end
           end
 
-          require 'parallel'
-          results = Parallel.map(payloads) do |title, test, options|
-            env = options[:env].nil? ? {} : options[:env]
-            stdout, stderr, status = Open3.capture3(env, test)
-            ["\n================\n#{title}\n", stdout, stderr, status]
-          end
-          # because we cannot modify variables inside of Parallel
-          results.each do |result|
+          # thread.value joins the thread and returns the block's result
+          threads.map { |t| t.value }.each do |result|
             if result.last.to_i.zero?
               success_list.push(result.first.scan(%r{.*})[2])
             else
               failure_list.push(result.first.scan(%r{.*})[2])
             end
           end
+
           Thread.kill(progress)
         else
           require 'tty-spinner'
