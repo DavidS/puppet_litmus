@@ -21,7 +21,7 @@ module PuppetLitmus
       end
     else
       # load inventory
-      inventory_hash = inventory_hash_from_inventory_file
+      inventory_hash = PuppetLitmus::BoltInventory.default_inventory.to_h
       node_config = config_from_node(inventory_hash, ENV['TARGET_HOST'])
 
       if target_in_group(inventory_hash, ENV['TARGET_HOST'], 'docker_nodes')

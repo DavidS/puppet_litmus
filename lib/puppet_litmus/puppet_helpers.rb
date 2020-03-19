@@ -64,7 +64,7 @@ module PuppetLitmus::PuppetHelpers
       end
 
       manifest_file_location = opts[:manifest_file_location] || create_manifest_file(manifest)
-      inventory_hash = File.exist?('inventory.yaml') ? inventory_hash_from_inventory_file : localhost_inventory_hash
+      inventory_hash = PuppetLitmus::BoltInventory.inventory.to_h
       raise "Target '#{target_node_name}' not found in inventory.yaml" unless target_in_inventory?(inventory_hash, target_node_name)
 
       span.add_field('litmus.node_name', target_node_name)
@@ -152,7 +152,7 @@ module PuppetLitmus::PuppetHelpers
       span.add_field('litmus.opts', opts)
 
       target_node_name = targeting_localhost? ? 'litmus_localhost' : ENV['TARGET_HOST']
-      inventory_hash = File.exist?('inventory.yaml') ? inventory_hash_from_inventory_file : localhost_inventory_hash
+      inventory_hash = PuppetLitmus::BoltInventory.inventory.to_h
       raise "Target '#{target_node_name}' not found in inventory.yaml" unless target_in_inventory?(inventory_hash, target_node_name)
 
       span.add_field('litmus.node_name', target_node_name)
@@ -190,7 +190,7 @@ module PuppetLitmus::PuppetHelpers
       span.add_field('litmus.options', options)
 
       target_node_name = targeting_localhost? ? 'litmus_localhost' : ENV['TARGET_HOST']
-      inventory_hash = File.exist?('inventory.yaml') ? inventory_hash_from_inventory_file : localhost_inventory_hash
+      inventory_hash = PuppetLitmus::BoltInventory.inventory.to_h
       raise "Target '#{target_node_name}' not found in inventory.yaml" unless target_in_inventory?(inventory_hash, target_node_name)
 
       span.add_field('litmus.node_name', target_node_name)
@@ -307,7 +307,7 @@ module PuppetLitmus::PuppetHelpers
       span.add_field('litmus.arguments', arguments)
 
       target_node_name = targeting_localhost? ? 'litmus_localhost' : ENV['TARGET_HOST']
-      inventory_hash = File.exist?('inventory.yaml') ? inventory_hash_from_inventory_file : localhost_inventory_hash
+      inventory_hash = PuppetLitmus::BoltInventory.inventory.to_h
       raise "Target '#{target_node_name}' not found in inventory.yaml" unless target_in_inventory?(inventory_hash, target_node_name)
 
       span.add_field('litmus.node_name', target_node_name)

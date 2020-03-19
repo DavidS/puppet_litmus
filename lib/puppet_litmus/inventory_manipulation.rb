@@ -1,6 +1,85 @@
 # frozen_string_literal: true
 
+require 'yaml'
+
 module PuppetLitmus; end # rubocop:disable Style/Documentation
+
+class PuppetLitmus::BoltInventory
+  def self.default_inventory
+    @default_inventory ||= BoltInventory.new('inventory.yaml')
+  end
+
+  def self.localhost_inventory
+    @localhost_inventory ||= BoltInventory.new('/',
+      {
+        'version' => 2,
+        'groups' => [
+          {
+            'name' => 'local',
+            'targets' => [
+              {
+                'uri' => 'litmus_localhost',
+                'config' => { 'transport' => 'local' },
+                'facts' => { 'provisioner' => 'localhost', 'platform' => 'localhost' },
+                'feature' => 'puppet-agent',
+              },
+            ],
+          },
+        ],
+      }
+    )
+  end
+
+  def self.load(inventory_path)
+    if inventory_path == 'inventory.yaml'
+      default_inventory
+    else
+      new(inventory_path)
+    end
+  end
+
+  # Provide a BoltInventory. This either loads from `inventory.yaml` in the current
+  # directory, or provides a stub to work with localhost.
+  #
+  # @return [BoltInventory] the loaded inventory
+  def self.inventory
+    if default_inventory.exist?
+      default_inventory
+    else
+      localhost_inventory
+    end
+  end
+
+  attr_reader :data, :path
+
+  def initialise(inventory_path, data = nil)
+    @data = data
+    @path = inventory_path
+  end
+
+  def exist?
+    File.exist?(path)
+  end
+
+  def assert_exist!
+    raise "There is no inventory file at '#{path}'." unless exist?
+  end
+
+  def compatible?
+    (!data&.dig('version').nil?) && (inventory_hash['version'] >= 2)
+  end
+
+  def assert_compatible!
+    raise "Inventory file is incompatible (it is version 1). Try the 'bolt project migrate' command or reprovision your targets." unless compatible?
+  end
+
+  def to_h
+    assert_exist!
+    @data ||= YAML.load_file(inventory_full_path)
+    assert_compatible!
+    @data
+  end
+end
 
 # helper functions for manipulating and reading a bolt inventory file
 module PuppetLitmus::InventoryManipulation
@@ -8,40 +87,15 @@ module PuppetLitmus::InventoryManipulation
   #
   # @param inventory_full_path [String] path to the inventory.yaml file
   # @return [Hash] hash of the inventory.yaml file.
-  def inventory_hash_from_inventory_file(inventory_full_path = nil)
-    require 'yaml'
-    inventory_full_path = if inventory_full_path.nil?
-                            'inventory.yaml'
-                          else
-                            inventory_full_path
-                          end
-    raise "There is no inventory file at '#{inventory_full_path}'." unless File.exist?(inventory_full_path)
-
-    inventory_hash = YAML.load_file(inventory_full_path)
-    raise "Inventory file is incompatible (version 2 and up). Try the 'bolt project migrate' command." if inventory_hash.dig('version').nil? || (inventory_hash['version'] < 2)
-
-    inventory_hash
+  def inventory_hash_from_inventory_file(inventory_full_path = 'inventory.yaml')
+    BoltInventory.load(inventory_full_path).to_h
   end
 
-  # Provide a default hash for executing against localhost
+  # Provide a default inventory hash for executing against localhost
   #
   # @return [Hash] inventory.yaml hash containing only an entry for localhost
   def localhost_inventory_hash
-    {
-      'version' => 2,
-      'groups' => [
-        {
-          'name' => 'local',
-          'targets' => [
-            {
-              'uri' => 'litmus_localhost',
-              'config' => { 'transport' => 'local' },
-              'feature' => 'puppet-agent',
-            },
-          ],
-        },
-      ],
-    }
+    PuppetLitmus::BoltInventory.localhost_inventory.to_h
   end
 
   # Finds targets to perform operations on from an inventory hash.

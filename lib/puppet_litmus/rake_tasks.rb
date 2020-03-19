@@ -105,7 +105,7 @@ namespace :litmus do
   # @param :target_node_name [Array] nodes on which to install puppet agent.
   desc 'install puppet agent, [:collection, :target_node_name]'
   task :install_agent, [:collection, :target_node_name] do |_task, args|
-    inventory_hash = inventory_hash_from_inventory_file
+    inventory_hash = PuppetLitmus::BoltInventory.default_inventory.to_h
     targets = find_targets(inventory_hash, args[:target_node_name])
     if targets.empty?
       puts 'No targets found'
@@ -145,7 +145,7 @@ namespace :litmus do
   # @param :added_feature [String] the feature which you wish to add.
   desc 'add_feature, [:added_feature, :target_node_name]'
   task :add_feature, [:added_feature, :target_node_name] do |_task, args|
-    inventory_hash = inventory_hash_from_inventory_file
+    inventory_hash = PuppetLitmus::BoltInventory.default_inventory.to_h
     targets = find_targets(inventory_hash, args[:target_node_name])
     if targets.empty?
       puts 'No targets found'
@@ -172,7 +172,7 @@ namespace :litmus do
   # @param :target_node_name [Array] nodes on which to install a puppet module for testing.
   desc 'install_module - build and install module'
   task :install_modules_from_directory, [:source, :target_node_name] do |_task, args|
-    inventory_hash = inventory_hash_from_inventory_file
+    inventory_hash = PuppetLitmus::BoltInventory.default_inventory.to_h
     target_nodes = find_targets(inventory_hash, args[:target_node_name])
     if target_nodes.empty?
       puts 'No targets found'
@@ -211,7 +211,7 @@ namespace :litmus do
   # @param :target_node_name [Array] nodes on which to check connnectivity
   desc 'check_connectivity - build and install module'
   task :check_connectivity, [:target_node_name] do |_task, args|
-    inventory_hash = inventory_hash_from_inventory_file
+    inventory_hash = PuppetLitmus::BoltInventory.default_inventory.to_h
     target_nodes = find_targets(inventory_hash, args[:target_node_name])
     if target_nodes.empty?
       puts 'No targets found'
@@ -225,7 +225,7 @@ namespace :litmus do
   # @param :target_node_name [Array] nodes on which to install a puppet module for testing.
   desc 'install_module - build and install module'
   task :install_module, [:target_node_name] do |_task, args|
-    inventory_hash = inventory_hash_from_inventory_file
+    inventory_hash = PuppetLitmus::BoltInventory.default_inventory.to_h
     target_nodes = find_targets(inventory_hash, args[:target_node_name])
     if target_nodes.empty?
       puts 'No targets found'
@@ -266,7 +266,7 @@ namespace :litmus do
   # @param :target [Array] nodes to remove from test environemnt and decommission.
   desc 'tear-down - decommission machines'
   task :tear_down, [:target] do |_task, args|
-    inventory_hash = inventory_hash_from_inventory_file
+    inventory_hash = PuppetLitmus::BoltInventory.default_inventory.to_h
     targets = find_targets(inventory_hash, args[:target])
     if targets.empty?
       puts 'No targets found'
@@ -296,7 +296,7 @@ namespace :litmus do
   # @param :module_name [String] module name to be uninstalled
   desc 'uninstall_module - uninstall module'
   task :uninstall_module, [:target_node_name, :module_name] do |_task, args|
-    inventory_hash = inventory_hash_from_inventory_file
+    inventory_hash = PuppetLitmus::BoltInventory.default_inventory.to_h
     target_nodes = find_targets(inventory_hash, args[:target_node_name])
     if target_nodes.empty?
       puts 'No targets found'
@@ -326,7 +326,7 @@ namespace :litmus do
   namespace :acceptance do
     require 'rspec/core/rake_task'
     if File.file?('inventory.yaml')
-      inventory_hash = inventory_hash_from_inventory_file
+      inventory_hash = PuppetLitmus::BoltInventory.default_inventory.to_h
       targets = find_targets(inventory_hash, nil)
 
       # Run acceptance tests against all machines in the inventory file in parallel.
